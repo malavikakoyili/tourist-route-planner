@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Tourist Route Planner</title>
+
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+    <header>
+        <h1>🧭 Tourist Route Planner</h1>
+        <p>Plan your sightseeing route efficiently</p>
+    </header>
+
+    <main>
+
+        <section class="sidebar">
+
+            <h2>Plan Your Trip</h2>
+
+            <button id="locationBtn">
+                📍 Use My Location
+            </button>
+
+            <h3>Add Tourist Spots</h3>
+
+            <input
+                type="text"
+                id="placeInput"
+                placeholder="Enter a place..."
+            >
+
+            <button id="addPlaceBtn">
+                + Add Place
+            </button>
+
+            <div id="placesList">
+                <p>No places added yet.</p>
+            </div>
+
+            <button id="planBtn">
+                🚀 Plan My Trip
+            </button>
+
+            <div id="tripInfo">
+
+            </div>
+
+        </section>
+
+
+        <section class="map-container">
+
+            <div id="map"></div>
+
+        </section>
+
+    </main>
+
+
+    <!-- Leaflet JS -->
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
+
+    <script
+        src="{{ url_for('static', filename='script.js') }}">
+    </script>
+
+</body>
+
+</html>
