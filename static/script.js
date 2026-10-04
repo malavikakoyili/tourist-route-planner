@@ -83,11 +83,18 @@ document
     .getElementById("addPlaceBtn")
     .addEventListener("click", function () {
 
-        const input =
+        const placeInput =
             document.getElementById("placeInput");
 
+        const durationInput =
+            document.getElementById("durationInput");
+
+
         const placeName =
-            input.value.trim();
+            placeInput.value.trim();
+
+        const duration =
+            parseInt(durationInput.value);
 
 
         if (placeName === "") {
@@ -95,17 +102,40 @@ document
             alert("Please enter a place.");
 
             return;
+
         }
 
 
-        places.push(placeName);
+        if (!duration || duration <= 0) {
 
-        input.value = "";
+            alert(
+                "Please enter how many minutes you want to spend there."
+            );
+
+            return;
+
+        }
+
+
+        places.push({
+
+            name: placeName,
+
+            duration: duration
+
+        });
+
+
+        // Clear the input boxes
+
+        placeInput.value = "";
+
+        durationInput.value = "";
+
 
         displayPlaces();
 
     });
-
 
 // ==========================================
 // DISPLAY PLACES
@@ -120,7 +150,7 @@ function displayPlaces() {
     placesList.innerHTML = "";
 
 
-    places.forEach(function (place, index) {
+    places.forEach(function(place, index) {
 
         const div =
             document.createElement("div");
@@ -130,7 +160,9 @@ function displayPlaces() {
 
 
         div.innerHTML = `
-            📍 ${index + 1}. ${place}
+            📍 ${index + 1}. ${place.name}
+            <br>
+            ⏱️ ${place.duration} minutes
         `;
 
 
@@ -139,7 +171,6 @@ function displayPlaces() {
     });
 
 }
-
 
 // ==========================================
 // GEOCODING
@@ -194,7 +225,81 @@ async function getCoordinates(placeName) {
     }
 
 }
+// ==========================================
+// FIND NEARBY FOOD SPOTS
+// ==========================================
 
+async function getNearbyFood(latitude, longitude) {
+
+    const radius = 1000; // 1 km
+
+
+    const query = `
+    [out:json][timeout:10];
+
+    (
+        nwr["amenity"="restaurant"]
+        (around:${radius},${latitude},${longitude});
+
+        nwr["amenity"="cafe"]
+        (around:${radius},${latitude},${longitude});
+
+        nwr["amenity"="fast_food"]
+        (around:${radius},${latitude},${longitude});
+    );
+
+    out center;
+`;
+
+
+    // Use an alternative Overpass server
+    const url =
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter?data=" +
+    encodeURIComponent(query);
+
+
+    try {
+
+        const response =
+            await fetch(url);
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Server returned ${response.status}`
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Food spots found:",
+            data.elements.length
+        );
+
+
+        return data.elements;
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Food search error:",
+            error
+        );
+
+
+        return [];
+
+    }
+
+}
 
 // ==========================================
 // SHOW PLACE ON MAP
@@ -482,19 +587,23 @@ document
 
         for (const place of places) {
 
-            const coordinates =
-                await getCoordinates(place);
+    const coordinates =
+        await getCoordinates(place.name);
 
 
-            if (coordinates) {
+    if (coordinates) {
 
-                locations.push(coordinates);
+        // Keep the time spent at this location
+        coordinates.duration = place.duration;
 
-                showPlaceOnMap(coordinates);
 
-            }
+        locations.push(coordinates);
 
-        }
+        showPlaceOnMap(coordinates);
+
+    }
+
+}
 
 
         // ==================================
@@ -587,6 +696,24 @@ const totalRoadDistance =
 const totalDrivingTime =
     roadRoute.duration / 60;
 
+// ==========================================
+// CALCULATE SIGHTSEEING TIME
+// ==========================================
+
+let totalVisitTime = 0;
+
+
+optimizedRoute.forEach(function(place) {
+
+    totalVisitTime += place.duration;
+
+});
+// ==========================================
+// TOTAL TRIP TIME
+// ==========================================
+
+const totalTripTime =
+    totalDrivingTime + totalVisitTime;
 
 // ==========================================
 // DISPLAY TRIP INFORMATION
@@ -606,7 +733,15 @@ let routeHTML = `
         ⏱️ <strong>Driving Time:</strong>
         ${formatTime(totalDrivingTime)}
     </p>
+    <p>
+    📍 <strong>Sightseeing Time:</strong>
+    ${formatTime(totalVisitTime)}
+</p>
 
+<p>
+    ⏱️ <strong>Total Trip Time:</strong>
+    ${formatTime(totalTripTime)}
+</p>
     <hr>
 `;
 
@@ -633,5 +768,14 @@ optimizedRoute.forEach(
 
 tripInfo.innerHTML = routeHTML;
 
+
+    });
+getNearbyFood(28.6562, 77.2410)
+    .then(function(food) {
+
+        console.log(
+            "Nearby food:",
+            food
+        );
 
     });
